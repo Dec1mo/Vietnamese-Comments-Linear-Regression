@@ -1,29 +1,26 @@
 import pickle
 import numpy as np
-from scipy.sparse.linalg import inv
+from numpy.linalg import pinv
 from scipy.sparse import csr_matrix
+import re
 
 def calc_w(X_train, y_train):
-	'''
-	XT = X_train.transpose()
-	multi_X = XT.multiply(X_train)
-	inv_multi_X = inv(multi_X)
-	mul_X = inv_multi_X.multiply(XT)
-	y = csr_matrix(y_train)
-	inv_y = inv(y)
-	return mul_X.multiply(inv_y)
-	'''
-	return (inv(X_train.transpose() @ X_train) @ (X_train.transpose())) @ (csr_matrix(y_train).transpose())
+	inv_XXT = pinv((X_train.transpose() @ X_train).todense())
+	M = (X_train.transpose() @ csr_matrix(y_train).transpose()).todense()
+	return inv_XXT * M
 	
 def predict(w, X_test):
-	y_predict = (X_test @ w).todense()
-	new_y = [one_y[0] for one_y in y_predict]
-	return y_predict
+	y_predict = X_test.todense() * w
+	new_y = [list(np.array(one_y[0]).reshape(-1,))[0] for one_y in y_predict]
+	return new_y
 	
-def evaluate(y_predict, y_test):
+def evaluate(y_predict, y_test, file_name = 'result.txt'):
+	f = open(file_name,"a+")
 	for i in range (len(y_test)):
-		print("{}. predict = {}\t test = {}".format(i+1, y_predict[i], y_test[i]));
-
+		f.write("{}. predict = {:^20}\t test = {}\n".format(i+1, y_predict[i], y_test[i]));
+		print("{}. predict = {:^20}\t test = {}".format(i+1, y_predict[i], y_test[i]));
+	f.close() 
+	
 def main():
 	print ('Loading pickle files')
 	with open (r'X_train.pickle', 'rb') as file:
@@ -35,11 +32,20 @@ def main():
 	with open (r'y_test.pickle', 'rb') as file:
 		y_test = pickle.load(file)
 	print ('Loaded successfully')
+	print ("X_train's rows (number of train samples) = {}".format (len(X_train.todense())))
+	print ("y_train's rows (number of train label-number samples) = {}".format (len(y_train)))
+	print ("X_test's rows (number of test samples) = {}".format (len(X_test.todense())))
+	print ("y_test's rows (number of test label-number samples) = {}".format (len(y_test)))
 	
+	'''
 	w = calc_w(X_train, y_train)
-	
+	print ('Dumping w to pickle file successfully')
 	with open (r'w.pickle', 'wb') as file:
 		pickle.dump(w, file, pickle.HIGHEST_PROTOCOL)
+	print ('Dumped w to pickle file successfully')
+	'''
+	with open (r'w.pickle', 'rb') as file:
+		w = pickle.load(file)
 	
 	y_predict = predict(w, X_test)
 	evaluate (y_predict, y_test)	
