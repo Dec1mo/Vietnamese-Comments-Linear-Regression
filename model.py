@@ -3,6 +3,7 @@ import numpy as np
 from numpy.linalg import pinv
 from scipy.sparse import csr_matrix
 import re
+from sklearn import linear_model
 
 def calc_w(X_train, y_train):
 	inv_XXT = pinv((X_train.transpose() @ X_train).todense())
@@ -47,8 +48,15 @@ def main():
 	with open (r'w.pickle', 'rb') as file:
 		w = pickle.load(file)
 	
-	y_predict = predict(w, X_test)
-	evaluate (y_predict, y_test)	
+	#y_predict = predict(w, X_test)
+	#evaluate (y_predict, y_test)	
+	
+	# For libarary-based version
+	regr = linear_model.LinearRegression(fit_intercept=False) # fit_intercept = False for calculating the bias
+	regr.fit(X_train, y_train)
+	print( 'Solution found by scikit-learn  : ', regr.coef_ )
+	print( 'Solution found by scikit-learn  : ', w.T )
+	
 	
 if __name__ == '__main__':
 	main()
